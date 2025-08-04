@@ -13,8 +13,16 @@ public class BookGenerator
             .RuleFor(b => b.ISBN, f => f.Random.Replace("###-###-###"))
             .RuleFor(b => b.Title, f =>
             {
-                var words = f.Random.WordsArray(f.Random.Int(2, 7));
-                return string.Join(" ", words.Select(w => char.ToUpper(w[0]) + w.Substring(1)));
+                if (locale == "en")
+                {
+                    var words = f.Random.WordsArray(f.Random.Int(2, 5));
+                    return string.Join(" ", words.Select(w => char.ToUpper(w[0]) + w.Substring(1)));
+                }
+                else
+                {
+                    var sentence = f.Lorem.Sentence(3, 2);
+                    return sentence.TrimEnd('.', '!', '?'); 
+                }
             })
             .RuleFor(b => b.Authors, f => f.Name.FullName())
             .RuleFor(b => b.Publisher, f => f.Company.CompanyName())
