@@ -15,7 +15,7 @@ namespace Bookstore.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get([FromQuery] int seed, [FromQuery] int page, [FromQuery] string locale = "en", 
+        public IActionResult Get([FromQuery] long seed, [FromQuery] int page, [FromQuery] string locale = "en", 
             [FromQuery] double likes = 0, [FromQuery] double reviews = 0)
         {
             var books = _generator.GenerateBooks(seed, page, locale, likes, reviews);

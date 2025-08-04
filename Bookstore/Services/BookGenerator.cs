@@ -3,13 +3,22 @@ using Bookstore.Models;
 
 public class BookGenerator
 {
-    public List<Book> GenerateBooks(int seed, int page, string locale, double avgLikes, double avgReviews, 
+    public static int NormalizeSeed(long userSeed, int page)
+    {
+        return unchecked((int)((userSeed % int.MaxValue) + page));
+    }
+
+    public List<Book> GenerateBooks(long seed, int page, string locale, double avgLikes, double avgReviews, 
         int count = 10)
     {
+        int actualSeed = NormalizeSeed(seed, page);
+        Randomizer.Seed = new Random(actualSeed);
+
         Randomizer.Seed = new Random(123);
         var faker = new Faker(locale);
 
         var bookFaker = new Faker<Book>(locale)
+            .UseSeed(actualSeed)
             .RuleFor(b => b.ISBN, f => f.Random.Replace("###-###-###"))
             .RuleFor(b => b.Title, f =>
             {
