@@ -1,0 +1,150 @@
+﻿@{
+    ViewData["Title"] = "Book Generator";
+}
+
+<div class="container py-4">
+    <h2>Fake Bookstore Generator</h2>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label>Language/Region</label>
+            <select id="locale" class="form-control">
+                <option value="en">English (US)</option>
+                <option value="de">German (Germany)</option>
+                <option value="ja">Japanese (Japan)</option>
+            </select>
+        </div>
+        <div class="col">
+            <label>Seed</label>
+            <input type="number" id="seed" class="form-control" value="123">
+            <button class="btn btn-sm btn-primary mt-1" onclick="randomSeed()"> Random</button>
+        </div>
+        <div class="col">
+            <label>Average Likes</label>
+            <input type="range" id="likes" min="0" max="10" step="0.1" class="form-range" value="3.7">
+            <span id="likesVal">3.7</span>
+        </div>
+        <div class="col">
+            <label>Average Reviews</label>
+            <input type="number" id="reviews" class="form-control" value="4.7" step="0.1">
+        </div>
+    </div>
+
+    <div id="bookAccordion">
+        <table class="table table-striped" id="booksTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>ISBN</th>
+                <th>Title</th>
+                <th>Authors</th>
+                <th>Publisher</th>
+            </tr>
+        </thead>
+        <tbody id="booksBody"></tbody>
+        </table>
+    </div>
+        <tbody id="booksBody" data-bs-parent="#bookAccordion"></tbody>
+    </table>
+
+    <div id="loading" class="text-center my-3" style="display:none;">Loading...</div>
+</div>
+
+@section Scripts {
+    <script>
+        let page = 1;
+        let loading = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadBooks(true);
+
+            window.addEventListener('scroll', () => {
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100 && !loading) {
+                    page++;
+                    loadBooks();
+                }
+            });
+
+            document.querySelectorAll("#locale, #seed, #likes, #reviews").forEach(el => {
+                el.addEventListener("change", () => {
+                    page = 1;
+                    document.getElementById("booksBody").innerHTML = "";
+                    loadBooks(true);
+                });
+            });
+
+            document.getElementById("likes").addEventListener("input", (e) => {
+                document.getElementById("likesVal").innerText = e.target.value;
+            });
+        });
+
+        function randomSeed() {
+            const newSeed = Math.floor(Math.random() * 100000);
+            document.getElementById("seed").value = newSeed;
+            page = 1;
+            document.getElementById("booksBody").innerHTML = "";
+            loadBooks(true);
+        }
+
+        function loadBooks(reset = false) {
+            loading = true;
+            document.getElementById("loading").style.display = "block";
+
+            const seed = document.getElementById("seed").value;
+            const locale = document.getElementById("locale").value;
+            const likes = document.getElementById("likes").value;
+            const reviews = document.getElementById("reviews").value;
+
+            fetch(`/api/booksapi?seed=${seed}&page=${page}&locale=${locale}&likes=${likes}&reviews=${reviews}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById("booksBody");
+                            data.forEach(book => {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-bs-toggle", "collapse");
+            tr.setAttribute("data-bs-target", `#details-${book.index}`);
+            tr.style.cursor = "pointer";
+
+            tr.innerHTML = `
+                <td>${book.index}</td>
+                <td>${book.isbn}</td>
+                <td>${book.title}</td>
+                <td>${book.authors}</td>
+                <td>${book.publisher}</td>
+            `;
+
+            const detailTr = document.createElement("tr");
+            detailTr.classList.add("collapse");
+            detailTr.id = `details-${book.index}`;
+            detailTr.setAttribute("data-bs-parent", "#bookAccordion");
+            detailTr.innerHTML = `
+                <td colspan="5">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <img src="${book.coverUrl}" alt="Cover" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-10">
+                            <p><strong>Likes:</strong> ${book.likes}</p>
+                            <div><strong>Reviews:</strong></div>
+                            <ul>
+                                ${book.reviews.map(r => `<li><strong>${r.reviewer}:</strong> ${r.text}</li>`).join("")}
+                            </ul>
+                        </div>
+                    </div>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            tbody.appendChild(detailTr);
+        });
+
+                    loading = false;
+                    document.getElementById("loading").style.display = "none";
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+                        page++;
+                        loadBooks();
+                    }
+                });
+        }
+    </script>
+}
